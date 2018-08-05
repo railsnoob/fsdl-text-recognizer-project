@@ -1,6 +1,6 @@
 # Full Stack Deep Learning Labs
 
-Welcome!
+Welcome everyone!
 
 ## W&B Jupyter Hub instructions
 

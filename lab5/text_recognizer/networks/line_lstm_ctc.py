@@ -2,7 +2,7 @@ from boltons.cacheutils import cachedproperty
 import tensorflow as tf
 import tensorflow.keras.backend as K
 from tensorflow.python.client import device_lib
-from tensorflow.keras.layers import Conv2D, Dense, Dropout, Flatten, Input, MaxPooling2D, Permute, RepeatVector, Reshape, TimeDistributed, Lambda, LSTM, GRU, CuDNNLSTM, Bidirectional
+from tensorflow.keras.layers import Conv2D, Dense, Dropout, Flatten, Input, MaxPooling2D, Permute, RepeatVector, Reshape, TimeDistributed, Lambda, LSTM, GRU, CuDNNLSTM, Bidirectional, BatchNormalization
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.models import Model as KerasModel
 
@@ -49,11 +49,16 @@ def line_lstm_ctc(input_shape, output_shape, window_width=28, window_stride=14):
     convnet = KerasModel(inputs=convnet.inputs, outputs=convnet.layers[-2].output)
     convnet_outputs = TimeDistributed(convnet)(image_patches)
     # (num_windows, 128)
-
-    lstm_output = lstm_fn(128, return_sequences=True)(convnet_outputs)
+    convnet_outputs2 = BatchNormalization()(convnet_outputs)
+    
+    lstm_output = Bidirectional(lstm_fn(512, return_sequences=True))(convnet_outputs2)
     # (num_windows, 128)
+    lstm_output = Dropout(0.2)(lstm_output)
+    lstm_output2 = Bidirectional(lstm_fn(512,return_sequences=True))(lstm_output)
+    lstm_output2 = Dropout(0.2)(lstm_output2)
+    lstm_output3 = Bidirectional(lstm_fn(512, return_sequences=True))(lstm_output2)
 
-    softmax_output = Dense(num_classes, activation='softmax', name='softmax_output')(lstm_output)
+    softmax_output = Dense(num_classes, activation='softmax', name='softmax_output')(lstm_output3)
     # (num_windows, num_classes)
     ##### Your code above (Lab 3)
 
